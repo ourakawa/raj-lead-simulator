@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>新規リード シミュレータ | 月次X件から始まる予測</title>
+<style>
+:root{--paper:#F6F8FA;--ink:#12283E;--blue:#2B6CB0;--blue-deep:#1A4E8A;--red:#C4384C;--green:#3E8E5A;--gray:#64748B;--line:#D8E0E8}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--paper);color:var(--ink);font-family:'Noto Sans CJK JP','Noto Sans JP',sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:36px 40px 30px}
+.header{background:linear-gradient(135deg,#0F2A43 0%,#1A4E8A 100%);border-radius:18px;padding:30px 38px;color:#EDF2F7}
+.eyebrow{font-size:11px;letter-spacing:.24em;color:#9FB8D8;margin-bottom:12px;font-family:ui-monospace,monospace}
+h1{font-family:'Noto Serif CJK JP','Noto Sans CJK JP',serif;font-size:30px;line-height:1.25;font-weight:900}
+h1 .arrow{color:#7FA8D9;font-family:ui-monospace,monospace}
+.sub{margin-top:10px;font-size:13px;color:#C3D3E8;line-height:1.75}
+.ctrl{margin-top:20px;background:rgba(255,255,255,.07);border:1px solid rgba(159,184,216,.4);border-radius:14px;padding:18px 22px;display:flex;flex-wrap:wrap;gap:20px;align-items:center}
+.ctrl .lab{font-size:12px;letter-spacing:.14em;color:#9FB8D8}
+.xval{display:flex;align-items:baseline;gap:8px}
+.xval input{width:96px;font-size:38px;font-weight:900;color:#FFF;background:transparent;border:none;border-bottom:3px solid #7FA8D9;text-align:right;font-family:ui-monospace,monospace}
+.xval input:focus{outline:none;border-bottom-color:#FFF}
+.xval .unit{font-size:15px;color:#C3D3E8}
+input[type=range]{flex:1;min-width:220px;accent-color:#7FA8D9;height:6px;cursor:pointer}
+.presets{display:flex;gap:8px}
+.presets button{background:transparent;border:1px solid rgba(159,184,216,.55);color:#DCE7F5;border-radius:999px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit}
+.presets button:hover,.presets button.on{background:#FFF;color:#1A4E8A;border-color:#FFF;font-weight:700}
+section{margin-top:24px}
+.sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:12px;flex-wrap:wrap}
+.sec-no{font-size:12px;color:var(--blue);letter-spacing:.2em;font-family:ui-monospace,monospace}
+.sec-title{font-size:19px;font-weight:800}
+.sec-note{font-size:11.5px;color:var(--gray);margin-left:auto}
+.card{background:#fff;border:1px solid var(--line);border-radius:16px;box-shadow:0 1px 3px rgba(18,40,62,.06)}
+.s1{display:flex;gap:18px}
+.s1-chart{flex:1.6;padding:20px 22px 10px}
+.s1-side{flex:1;padding:24px 26px;display:flex;flex-direction:column;justify-content:center;gap:16px}
+.kicker{font-size:11px;letter-spacing:.18em;color:var(--gray)}
+.bignum{font-size:52px;font-weight:900;color:var(--blue-deep);line-height:1;font-family:ui-monospace,monospace}
+.bignum small{font-size:19px;font-weight:700;color:var(--gray);margin-left:6px;font-family:inherit}
+.mini{font-size:12.5px;color:var(--ink);line-height:1.85}
+.mini b{color:var(--blue-deep)}
+.panel-title{font-size:13.5px;font-weight:800;margin-bottom:2px}
+.panel-sub{font-size:11px;color:var(--gray);margin-bottom:8px;line-height:1.6}
+.legend{display:flex;gap:18px;font-size:11px;color:var(--gray);margin-top:8px;flex-wrap:wrap;align-items:center}
+.legend .k{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:-1px}
+.s2{padding:20px 22px}
+table{width:100%;border-collapse:collapse;margin-top:10px;font-size:12px}
+th{color:var(--gray);font-weight:700;text-align:right;padding:5px 8px;border-bottom:1px solid var(--line)}
+th:first-child{text-align:left}
+td{padding:5px 8px;text-align:right;border-bottom:1px dashed #E8EEF4;font-family:ui-monospace,monospace}
+td:first-child{text-align:left;font-family:inherit;font-weight:700}
+.s3{display:flex;gap:18px;align-items:stretch}
+.s3-chart{flex:1.6;padding:20px 22px 10px}
+.s3-side{flex:1;padding:22px 26px;display:flex;flex-direction:column;justify-content:center;gap:12px}
+.shuffle{background:var(--blue-deep);color:#FFF;border:none;border-radius:10px;padding:12px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.shuffle:hover{background:#163E66}
+.shuffle:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid #7FA8D9;outline-offset:2px}
+footer{margin-top:24px;padding-top:13px;border-top:1px solid var(--line);font-size:10px;color:var(--gray);line-height:1.9}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+@media (max-width:860px){.s1,.s3{flex-direction:column}.wrap{padding:20px 16px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="header">
+  <div class="eyebrow">RAY AEGIS JAPAN &middot; INTERACTIVE LEAD SIMULATOR</div>
+  <h1>新規リード シミュレータ<br>月次 <span class="arrow">X</span> 件 <span class="arrow">&rarr;</span> 2030年の問い合わせ数</h1>
+  <div class="sub">月次リード数 X を入力すると、ポアソン過程・ロジスティック成長・Bass拡散の合成モデルが即時に再計算され、グラフと数値が連動して動きます。既定値 12.5件/月 では基本シナリオで 2027年 166件 → 2030年 254件。2026年10月27日、直近3カ月(8〜10月)の公表データで計算式を再調整済み。</div>
+  <div class="ctrl">
+    <div class="xval"><input id="xnum" type="number" min="1" max="50" step="0.5" value="12.5" aria-label="月次リード数"><span class="unit">件/月</span></div>
+    <input id="xslider" type="range" min="5" max="30" step="0.5" value="12.5" aria-label="月次リード数のスライダー">
+    <div class="presets" role="group" aria-label="プリセット">
+      <button data-x="10">10件</button><button data-x="12.5" class="on">12.5件</button><button data-x="15">15件</button>
+    </div>
+    <button class="shuffle" id="btnFs" style="background:rgba(255,255,255,.12);border:1px solid rgba(159,184,216,.55)" title="Fキーでも切替">&#x26A4; 全画面で発表</button>
+  </div>
+</div>
+
+<section>
+  <div class="sec-head"><span class="sec-no">01</span><span class="sec-title">月次リードの軌道 — S字の伸び</span><span class="sec-note">2026/11 を起点に2030/12までの50カ月</span></div>
+  <div class="s1">
+    <div class="card s1-chart">
+      <div class="panel-title">シナリオ別 月次リード数(件/月)</div>
+      <div class="panel-sub">線が滑らかに変形します。増加率は飽和水準(採用能力などの供給制約)で鈍る</div>
+      <svg id="svgS" viewBox="0 0 700 300" style="width:100%;height:auto" role="img" aria-label="月次リード数のS字曲線"></svg>
+      <div class="legend"><span><span class="k" style="background:#2B6CB0"></span>基本(年+16%)</span><span><span class="k" style="background:#C4384C;border-radius:50%"></span>悲観(年+8%)</span><span><span class="k" style="background:#3E8E5A;clip-path:polygon(50% 0,100% 100%,0 100%)"></span>楽観(年+25%)</span></div>
+    </div>
+    <div class="card s1-side">
+      <div>
+        <div class="kicker">入力値(現在の月次リード)</div>
+        <div class="bignum"><span id="bigX">12.5</span><small>件/月</small></div>
+      </div>
+      <div class="mini">年間換算 <b id="annNow">150件</b>(X &times; 12カ月)</div>
+      <div class="mini">2030年末の月次見込み(基本シナリオ)<br><b><span id="endM" style="font-size:24px">21.1</span>件/月</b> &nbsp;<span style="color:var(--gray)">≈ Xの1.79倍</span></div>
+      <div class="mini" style="color:var(--gray);font-size:11px">シナリオの飽和水準Kは X の 3.2倍(悲観)/4.4倍(基本)/7.2倍(楽観)。伸び率は年8〜25%で、Xに比例してスケールします。</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-no">02</span><span class="sec-title">年間お問い合わせ数の予測</span><span class="sec-note">縦線=ポアソン80%区間(±1.28√N)</span></div>
+  <div class="card s2">
+    <div class="panel-title">年間件数(件/年)</div>
+    <svg id="svgB" viewBox="0 0 980 330" style="width:100%;height:auto" role="img" aria-label="年間お問い合わせ数の棒グラフ"></svg>
+    <div class="legend"><span>棒=基本シナリオ</span><span><span class="k" style="background:#C4384C;border-radius:50%"></span>悲観(年+8%)</span><span><span class="k" style="background:#3E8E5A;clip-path:polygon(50% 0,100% 100%,0 100%)"></span>楽観(年+25%)</span><span>縦線=ポアソン80%区間</span></div>
+    <table>
+      <thead><tr><th>年</th><th>悲観(年+8%)</th><th>基本(年+16%)</th><th>基本 80%区間</th><th>楽観(年+25%)</th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<section>
+  <div class="sec-head"><span class="sec-no">03</span><span class="sec-title">到着のばらつき — ポアソン・シミュレーション</span><span class="sec-note">「シャッフル」で1年分を再抽選</span></div>
+  <div class="s3">
+    <div class="card s3-chart">
+      <div class="panel-title">直近12カ月の到着シミュレーション(件/月)</div>
+      <div class="panel-sub">現在の X を起点に、λ(t) のポアソン過程で月次の到着を抽選</div>
+      <svg id="svgP" viewBox="0 0 640 250" style="width:100%;height:auto" role="img" aria-label="月次到着のシミュレーション"></svg>
+    </div>
+    <div class="card s3-side">
+      <div class="mini">同じ X でも<strong>月ごとの件数は確率的に揺らぎます</strong>。年間で見ると基本シナリオの80%区間は ±1.28&radic;N —— たとえば <b id="exNote">240件の年に約±20件</b> は偶然の範囲です。</div>
+      <button class="shuffle" id="btnShuffle">&#x21bb; 1年分の到着をシャッフル</button>
+      <div class="mini" style="color:var(--gray);font-size:11px">短期的な凸凹(スパイクや低迷)に一喜一憂せず、12カ月移動累計で実績を判断するのが確率的な狙いの定め方です。</div>
+    </div>
+  </div>
+</section>
+
+<footer><b>2026年10月27日 再調整版</b> — 直近3カ月(8〜10月)の観測: トレンドマイクロ集計で2026年1〜9月の公表インシデントは607件(2025年通年594件を9月末で超過、10月9日時点659件は過去最大)、9月以降は検知〜初報が15日以内の事案が約8割で本物の加速。公開システムを狙った割合は30.3%→38.7%へ+10.4pt(脆弱性診断需要に直結)。警察庁は上半期ランサムウェア123件・過去最多(うち中小企業が約6割、侵入口の約半数がVPN機器)。国家サイバー統括室・経産省が10月9日に注意喚起、SCS評価制度も2026年度開始。 再校準式: g = 市場成長8%(IDC/IMARC) + 0.3×(公表件数成長 約30% − 8%) + 政策寄与 1.5pp ≒ 年16%(基本)、悲観8%・楽観25%。 検証: X=12.5件/月のとき基本 166件(2027)→254件(2030)。 モデル: ポアソン到着 + ロジスティック成長(K=Xの3.2/4.4/7.2倍) + Bass拡散の裏取り(q=0.147)。シナリオ・推計は本分析による。</footer>
+
+</div>
+<script>
+'use strict';
+const $=id=>document.getElementById(id);
+const sqrt=Math.sqrt,log=Math.log;
+const C={ink:'#12283E',blue:'#2B6CB0',deep:'#1A4E8A',red:'#C4384C',green:'#3E8E5A',gray:'#64748B',line:'#E2E9F0'};
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* ---- model (ported from Python; validated at X=12.5 -> 164/187/213/240) ---- */
+function traj(Kmul,Tmul,X,n=50){const K=Kmul*X,A=(K-X)/X,rm=log(A/(K/(Tmul*X)-1))/49,a=[];
+  for(let t=0;t<n;t++)a.push(K/(1+A*Math.exp(-rm*t)));return a;}
+const MUL={pess:{K:3.2,T:1.352},base:{K:4.4,T:1.7912},opt:{K:7.2,T:2.4927}};
+const YR=[[2,14],[14,26],[26,38],[38,50]];
+function sumR(a,i0,i1){let s=0;for(let i=i0;i<i1;i++)s+=a[i];return s;}
+function poisson(lam){const L=Math.exp(-lam);let k=0,p=1;do{k++;p*=Math.random();}while(p>L);return k-1;}
+function computeTargets(X){
+  const tr={};for(const k in MUL)tr[k]=traj(MUL[k].K,MUL[k].T,X);
+  const ann={pess:[],base:[],opt:[],band:[]};
+  for(let y=0;y<4;y++){const[i0,i1]=YR[y];
+    ann.pess.push(sumR(tr.pess,i0,i1));ann.base.push(sumR(tr.base,i0,i1));ann.opt.push(sumR(tr.opt,i0,i1));
+    ann.band.push(1.2816*sqrt(sumR(tr.base,i0,i1)));}
+  let ymaxM=10;while(ymaxM<tr.opt[49]*1.2)ymaxM+=5;
+  const wTop=ann.opt[3]+ann.band[3];
+  let ymaxA=100;while(ymaxA<Math.max(wTop,X*12)*1.15)ymaxA+=50;
+  return{X,base:tr.base,pess:tr.pess,opt:tr.opt,ymaxM,ann,ymaxA,endM:tr.base[49]};
+}
+/* ---- tween ---- */
+let cur=computeTargets(12.5);
+function snap(from,to,u,e){
+  const L=(a,b)=>a+(b-a)*e;
+  const o={X:L(from.X,to.X),ymaxM:L(from.ymaxM,to.ymaxM),ymaxA:L(from.ymaxA,to.ymaxA),endM:L(from.endM,to.endM),
+    base:to.base.map((v,i)=>L(from.base[i],v)),pess:to.pess.map((v,i)=>L(from.pess[i],v)),opt:to.opt.map((v,i)=>L(from.opt[i],v)),
+    ann:{base:to.ann.base.map((v,i)=>L(from.ann.base[i],v)),pess:to.ann.pess.map((v,i)=>L(from.ann.pess[i],v)),
+         opt:to.ann.opt.map((v,i)=>L(from.ann.opt[i],v)),band:to.ann.band.map((v,i)=>L(from.ann.band[i],v))}};
+  return o;
+}
+let animId=null;
+function goTo(to){
+  if(animId)cancelAnimationFrame(animId);
+  if(reduce){cur=to;render(to);return;}
+  const from=JSON.parse(JSON.stringify(cur)),t0=performance.now(),D=480;
+  (function step(now){
+    const u=Math.min(1,(now-t0)/D),e=u<.5?4*u*u*u:1-Math.pow(-2*u+2,3)/2;
+    const s=snap(from,to,u,e);render(s);
+    if(u<1)animId=requestAnimationFrame(step);else cur=to;
+  })(t0);
+}
+/* ---- render: S-curve ---- */
+function drawS(s){
+  const ymax=s.ymaxM,Y=v=>262-232*v/ymax,X=t=>20+12.24*t;
+  let h='';
+  const step=ymax>25?10:5;
+  for(let v=0;v<=ymax+0.01;v+=step)
+    h+=`<line x1="20" y1="${Y(v).toFixed(1)}" x2="625" y2="${Y(v).toFixed(1)}" stroke="${C.line}"/>`+
+       `<text x="16" y="${(Y(v)+4).toFixed(1)}" font-size="10" fill="${C.gray}" text-anchor="end">${v}</text>`;
+  h+=`<rect x="20" y="${Y(s.X*1.2).toFixed(1)}" width="605" height="${Math.max(0,Y(s.X)-Y(s.X*1.2)).toFixed(1)}" fill="${C.blue}" opacity="0.10"/>`;
+  const mk=a=>a.map((v,t)=>X(t).toFixed(1)+','+Y(v).toFixed(1)).join(' ');
+  h+=`<polyline points="${mk(s.pess)}" fill="none" stroke="${C.red}" stroke-width="2"/>`;
+  h+=`<polyline points="${mk(s.opt)}" fill="none" stroke="${C.green}" stroke-width="2"/>`;
+  h+=`<polyline points="${mk(s.base)}" fill="none" stroke="${C.blue}" stroke-width="3.5"/>`;
+  h+=`<text x="28" y="${(Y(s.X*1.15)-6).toFixed(1)}" font-size="10.5" font-weight="700" fill="#1A4E8A">月次${s.X.toFixed(1)}件の帯</text>`;
+  const NM={opt:'楽観',base:'基本',pess:'悲観'},CC={opt:C.green,base:C.blue,pess:C.red};
+  const ends=[['opt',s.opt[49]],['base',s.base[49]],['pess',s.pess[49]]].map(p=>({k:p[0],v:p[1],y:Y(p[1])})).sort((a,b)=>a.y-b.y);
+  for(let i=1;i<ends.length;i++) if(ends[i].y<ends[i-1].y+17) ends[i].y=ends[i-1].y+17;
+  ends.forEach(o=>{ h+=`<circle cx="${X(49).toFixed(1)}" cy="${Y(o.v).toFixed(1)}" r="3.5" fill="${CC[o.k]}"/>`+
+    `<text x="630" y="${(o.y+4).toFixed(1)}" font-size="11" font-weight="700" fill="${CC[o.k]}">${NM[o.k]} ${o.v.toFixed(1)}</text>`;});
+  h+=`<circle cx="${X(0).toFixed(1)}" cy="${Y(s.X).toFixed(1)}" r="4.5" fill="${C.ink}" stroke="#FFF" stroke-width="1.5"/><text x="28" y="${(Y(s.X)+26).toFixed(1)}" font-size="11" font-weight="700" fill="${C.ink}" paint-order="stroke" stroke="#FFF" stroke-width="3">現在 ${s.X.toFixed(1)}件/月</text>`;
+  [['2027',2],['2028',14],['2029',26],['2030',38]].forEach(p=>{
+    h+=`<text x="${X(p[1]).toFixed(1)}" y="286" font-size="10.5" fill="${C.gray}">${p[0]}</text>`;});
+  $('svgS').innerHTML=h;
+}
+/* ---- render: annual bars ---- */
+function drawB(s){
+  const ymax=s.ymaxA,Y=v=>290-250*v/ymax;
+  const xL=60,slot=900/5,bw=76;
+  let h='';
+  for(let v=0;v<=ymax+0.01;v+=ymax/4)
+    h+=`<line x1="${xL}" y1="${Y(v).toFixed(1)}" x2="965" y2="${Y(v).toFixed(1)}" stroke="${C.line}"/>`+
+       `<text x="${xL-6}" y="${(Y(v)+4).toFixed(1)}" font-size="10" fill="${C.gray}" text-anchor="end">${v}</text>`;
+  const y150=Y(s.X*12);
+  h+=`<line x1="${xL}" y1="${y150.toFixed(1)}" x2="965" y2="${y150.toFixed(1)}" stroke="${C.gray}" stroke-dasharray="5 4"/>`;
+  h+=`<text x="240" y="${(y150-8).toFixed(1)}" font-size="10.5" fill="${C.gray}" text-anchor="middle" paint-order="stroke" stroke="#FFF" stroke-width="3">2026基準 ${Math.round(s.X*12)}件</text>`;
+  for(let i=0;i<5;i++){
+    const cx=xL+slot*i+slot/2,Lx=cx-bw/2;
+    const val=i===0?s.X*12:s.ann.base[i-1];
+    const col=i===0?C.ink:C.blue;
+    h+=`<rect x="${Lx.toFixed(1)}" y="${Y(val).toFixed(1)}" width="${bw}" height="${(Y(0)-Y(val)).toFixed(1)}" rx="5" fill="${col}"/>`;
+    h+=`<text x="${cx.toFixed(1)}" y="${(Y(0)-10).toFixed(1)}" text-anchor="middle" font-size="12.5" font-weight="700" fill="#FFF">${Math.round(val)}</text>`;
+    h+=`<text x="${cx.toFixed(1)}" y="318" font-size="12" font-weight="700" fill="${C.ink}" text-anchor="middle">${2026+i}</text>`;
+    if(i>0){
+      const b=s.ann.band[i-1],y1=Y(val+b),y2=Y(val-b);
+      h+=`<line x1="${cx}" y1="${y1.toFixed(1)}" x2="${cx}" y2="${y2.toFixed(1)}" stroke="#475569" stroke-width="1.5"/>`;
+      h+=`<line x1="${cx-12}" y1="${y1.toFixed(1)}" x2="${cx+12}" y2="${y1.toFixed(1)}" stroke="#475569" stroke-width="1.5"/>`;
+      h+=`<line x1="${cx-12}" y1="${y2.toFixed(1)}" x2="${cx+12}" y2="${y2.toFixed(1)}" stroke="#475569" stroke-width="1.5"/>`;
+      h+=`<circle cx="${(cx-46).toFixed(1)}" cy="${Y(s.ann.pess[i-1]).toFixed(1)}" r="4.5" fill="${C.red}"/>`;
+      h+=`<path d="M ${(cx+46).toFixed(1)},${(Y(s.ann.opt[i-1])-6).toFixed(1)} l 6,10 h -12 z" fill="${C.green}"/>`;
+    }
+  }
+  $('svgB').innerHTML=h;
+  let rows='';
+  for(let i=0;i<4;i++)
+    rows+=`<tr><td>${2027+i}年</td><td>${Math.round(s.ann.pess[i])}件</td><td><b>${Math.round(s.ann.base[i])}件</b></td><td>${Math.round(s.ann.base[i]-s.ann.band[i])}〜${Math.round(s.ann.base[i]+s.ann.band[i])}件</td><td>${Math.round(s.ann.opt[i])}件</td></tr>`;
+  $('tbody').innerHTML=rows;
+}
+/* ---- render: poisson strip ---- */
+function drawStrip(X,arr){
+  const lam=traj(4.4,1.688,X).slice(0,12);
+  const mx=Math.max(X*1.6,...arr,12);
+  let ymax=5;while(ymax<mx+2)ymax+=5;
+  const Y=v=>210-185*v/ymax,by=210;
+  let h='';
+  for(let v=0;v<=ymax;v+=5)
+    h+=`<line x1="15" y1="${Y(v).toFixed(1)}" x2="625" y2="${Y(v).toFixed(1)}" stroke="${C.line}"/>`+
+       `<text x="11" y="${(Y(v)+4).toFixed(1)}" font-size="10" fill="${C.gray}" text-anchor="end">${v}</text>`;
+  h+=`<rect x="15" y="${Y(X*1.2).toFixed(1)}" width="610" height="${(Y(X)-Y(X*1.2)).toFixed(1)}" fill="${C.blue}" opacity="0.10"/>`;
+  h+=`<text x="620" y="18" text-anchor="end" font-size="10.5" font-weight="700" fill="#1A4E8A" paint-order="stroke" stroke="#FFF" stroke-width="3">水準 ${X.toFixed(1)}件/月</text>`;
+  arr.forEach((v,i)=>{
+    const x=24+i*50,hh=v*185/ymax,y=by-hh;
+    h+=`<rect x="${x}" y="${y.toFixed(1)}" width="32" height="${hh.toFixed(1)}" rx="3" fill="${v>X*1.2?C.deep:C.blue}"><animate attributeName="height" from="0" to="${hh.toFixed(1)}" dur="0.35s" fill="freeze"/><animate attributeName="y" from="${by}" to="${y.toFixed(1)}" dur="0.35s" fill="freeze"/></rect>`;
+    h+=`<text x="${x+16}" y="${(y-5).toFixed(1)}" font-size="10.5" fill="${C.ink}" text-anchor="middle" font-family="ui-monospace,monospace">${v}</text>`;
+    h+=`<text x="${x+16}" y="230" font-size="11" fill="${C.gray}" text-anchor="middle">${i+1}月</text>`;});
+  h+=`<line x1="15" y1="${by}" x2="625" y2="${by}" stroke="#C8D2DD" stroke-width="1.5"/>`;
+  $('svgP').innerHTML=h;
+}
+function shuffleStrip(X){
+  const lam=traj(4.4,1.688,X).slice(0,12);
+  drawStrip(X,lam.map(l=>poisson(l)));
+}
+/* ---- side cards ---- */
+function drawSide(s){
+  $('bigX').textContent=s.X.toFixed(1);
+  $('annNow').textContent=Math.round(s.X*12)+'件';
+  $('endM').textContent=s.endM.toFixed(1);
+  $('exNote').textContent=`${Math.round(s.ann.base[3])}件の年に約±${Math.round(s.ann.band[3])}件`;
+}
+function render(s){drawS(s);drawB(s);drawSide(s);}
+/* ---- events ---- */
+let X=12.5;
+function setX(v,animate){
+  v=Math.min(50,Math.max(1,v||12.5));
+  X=v;
+  $('xnum').value=v;$('xslider').value=Math.min(30,Math.max(5,v));
+  document.querySelectorAll('.presets button').forEach(b=>b.classList.toggle('on',+b.dataset.x===v));
+  goTo(computeTargets(v));
+  shuffleStrip(v);
+}
+$('xslider').addEventListener('input',e=>setX(+e.target.value));
+$('xnum').addEventListener('change',e=>setX(+e.target.value));
+document.querySelectorAll('.presets button').forEach(b=>b.addEventListener('click',()=>setX(+b.dataset.x)));
+$('btnShuffle').addEventListener('click',()=>shuffleStrip(X));
+$('btnFs').addEventListener('click',()=>{ if(document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); });
+document.addEventListener('keydown',e=>{ const t=document.activeElement; if(t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'))return;
+  if(e.key==='f'||e.key==='F'){ if(document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(()=>{}); } });
+/* ---- init ---- */
+render(cur);
+shuffleStrip(X);
+</script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092" integrity="sha512-UKNk8GbxkABxKcXYuLkO16EleLGUkcvJWtpSNmExE0Too3ZaFAxTscNWEc1OdAv5/BikHawapSCaiD2XCmp+Bw==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>
